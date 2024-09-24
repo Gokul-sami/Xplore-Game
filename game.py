@@ -15,6 +15,10 @@ width, height = screen.get_size()  # Get current window size
 # Load the dragon image from the assets folder
 background_image = pygame.image.load('assets/dragon-removebg.png')  # Your dragon image
 
+# Load the obstacle image from the assets folder
+obstacle_image = pygame.image.load('assets/bird.webp')  # Your obstacle image
+obstacle_image = pygame.transform.scale(obstacle_image, (50, 50))  # Scale to desired size
+
 # Scale the dragon image
 img_width, img_height = background_image.get_size()
 scale_factor = 0.5  # Adjust as necessary
@@ -32,11 +36,9 @@ cap = cv2.VideoCapture(0)
 # Function to create a new obstacle
 def create_obstacle():
     x_pos = random.choice([0, width // 3, 2 * width // 3])
-    return pygame.Rect(x_pos, 0, obstacle_width, obstacle_height)
+    return pygame.Rect(x_pos, 0, 50, 50)  # Keep the Rect the same size as the image for collision detection
 
 # Obstacle settings
-obstacle_width = 50
-obstacle_height = 50
 obstacles = []  # List to hold obstacles
 obstacle_speed = 5  # Speed at which obstacles move down
 for _ in range(3):  # Create 3 obstacles initially
@@ -99,7 +101,7 @@ while running:
         # Update and draw obstacles
         for obstacle in obstacles:
             obstacle.y += obstacle_speed  # Move the obstacle down
-            pygame.draw.rect(screen, (255, 0, 0), obstacle)  # Draw the obstacle
+            screen.blit(obstacle_image, (obstacle.x, obstacle.y))  # Draw the obstacle image
 
             # Check for collision with the dragon
             if obstacle.colliderect(pygame.Rect(dragon_x, height - scaled_height, scaled_width, scaled_height)):
