@@ -40,6 +40,11 @@ dragon_scale_factor = 0.1
 scaled_dragon = scale_image(dragon_image, dragon_scale_factor)
 dragon_width, dragon_height = scaled_dragon.get_size()
 
+# Scale the half-size dragon image
+dragon_half_scale_factor = 0.05  # Half of 0.1
+scaled_dragon_half = scale_image(dragon_image, dragon_half_scale_factor)
+dragon_half_width, dragon_half_height = scaled_dragon_half.get_size()
+
 # Scale egg images
 egg_scale_factor = 0.3
 scaled_eggs = [scale_image(img, egg_scale_factor) for img in egg_images]
@@ -122,6 +127,44 @@ game_duration = 120  # 2 minutes in seconds
 # Initialize Clock for controlling frame rate
 clock = pygame.time.Clock()
 
+# Function to determine if a hand is a fist
+def is_fist(hand_landmarks):
+    """
+    Determines whether the detected hand is a fist.
+
+    Args:
+        hand_landmarks: Mediapipe hand landmarks.
+
+    Returns:
+        bool: True if the hand is a fist, False otherwise.
+    """
+    # Initialize a counter for folded fingers
+    folded_fingers = 0
+
+    # Thumb: Check if tip is to the left of IP joint for the right hand
+    # For the left hand, you might need to adjust the comparison
+    if hand_landmarks.landmark[4].x < hand_landmarks.landmark[3].x:
+        folded_fingers += 1
+
+    # Index Finger
+    if hand_landmarks.landmark[8].y > hand_landmarks.landmark[6].y:
+        folded_fingers += 1
+
+    # Middle Finger
+    if hand_landmarks.landmark[12].y > hand_landmarks.landmark[10].y:
+        folded_fingers += 1
+
+    # Ring Finger
+    if hand_landmarks.landmark[16].y > hand_landmarks.landmark[14].y:
+        folded_fingers += 1
+
+    # Pinky Finger
+    if hand_landmarks.landmark[20].y > hand_landmarks.landmark[18].y:
+        folded_fingers += 1
+
+    # If all five fingers are folded, it's a fist
+    return folded_fingers == 5
+
 # Main loop
 while running:
     current_time = time.time()
@@ -157,17 +200,36 @@ while running:
     # Process the frame and get hand landmarks
     results = hands.process(rgb_frame)
 
-    # Default dragon position (centered)
+    # Initialize dragon position and size
     dragon_x = (width - dragon_width) // 2
+    dragon_current_image = scaled_dragon
+    current_dragon_width = dragon_width
+    current_dragon_height = dragon_height
 
-    # Update dragon position based on hand
+    # Update dragon position and size based on hand
     if results.multi_hand_landmarks:
         for hand_landmarks in results.multi_hand_landmarks:
             wrist_x = int(hand_landmarks.landmark[mp_hands.HandLandmark.WRIST].x * frame.shape[1])
             # Map the wrist position to the window width
-            dragon_x = int((wrist_x / frame.shape[1]) * width - dragon_width // 2)
-            dragon_x = max(0, min(dragon_x, width - dragon_width))  # Keep within window bounds
+            dragon_x = int((wrist_x / frame.shape[1]) * width - current_dragon_width // 2)
+            dragon_x = max(0, min(dragon_x, width - current_dragon_width))  # Keep within window bounds
+
+            # Check if the hand is a fist
+            if is_fist(hand_landmarks):
+                dragon_current_image = scaled_dragon_half
+                current_dragon_width = dragon_half_width
+                current_dragon_height = dragon_half_height
+            else:
+                dragon_current_image = scaled_dragon
+                current_dragon_width = dragon_width
+                current_dragon_height = dragon_height
+
             break  # Use the first detected hand
+    else:
+        # If no hand detected, keep the dragon at normal size
+        dragon_current_image = scaled_dragon
+        current_dragon_width = dragon_width
+        current_dragon_height = dragon_height
 
     if not game_over and remaining_time > 0:
         # Fill the screen with white color
@@ -194,14 +256,14 @@ while running:
             collision_offset_top_percentage = 0.04  # 4%
             collision_offset_side_percentage = 0.02  # 2%
 
-            collision_offset_top = int(dragon_height * collision_offset_top_percentage)
-            collision_offset_side = int(dragon_width * collision_offset_side_percentage)
+            collision_offset_top = int(current_dragon_height * collision_offset_top_percentage)
+            collision_offset_side = int(current_dragon_width * collision_offset_side_percentage)
 
             dragon_rect = pygame.Rect(
                 dragon_x + collision_offset_side,  # Shift right by 2% of width
-                height - dragon_height - 10 + collision_offset_top,  # Shift down by 4% of height
-                dragon_width - 2 * collision_offset_side,  # Reduce width by 4% (2% each side)
-                dragon_height - collision_offset_top  # Reduce height by 4%
+                height - current_dragon_height - 10 + collision_offset_top,  # Shift down by 4% of height
+                current_dragon_width - 2 * collision_offset_side,  # Reduce width by 4% (2% each side)
+                current_dragon_height - collision_offset_top  # Reduce height by 4%
             )
 
             # Check for collision with the dragon
@@ -222,7 +284,7 @@ while running:
                 # Fireballs do not affect the score when missed
 
         # Draw the dragon image at the calculated position
-        screen.blit(scaled_dragon, (dragon_x, height - dragon_height - 10))  # Slightly above the bottom
+        screen.blit(dragon_current_image, (dragon_x, height - current_dragon_height - 10))  # Slightly above the bottom
 
         # Draw the score
         font = pygame.font.SysFont(None, 36)
@@ -245,9 +307,9 @@ while running:
         screen.fill((0, 0, 0))  # Black background
         font_large = pygame.font.SysFont(None, 72)
         font_small = pygame.font.SysFont(None, 36)
-        game_over_text = font_large.render(end_text, True, (255, 0, 0))
-        final_score_text = font_small.render(f'Final Score: {score}', True, (255, 255, 255))
-        restart_text = font_small.render('Press R to Restart', True, (255, 255, 255))
+        game_over_text = font_large.render(end_text, True, (255, 0, 0))  # Red text for visibility
+        final_score_text = font_small.render(f'Final Score: {score}', True, (255, 255, 255))  # White text
+        restart_text = font_small.render('Press R to Restart', True, (255, 255, 255))  # White text
         screen.blit(game_over_text, (width // 2 - game_over_text.get_width() // 2, height // 2 - 100))
         screen.blit(final_score_text, (width // 2 - final_score_text.get_width() // 2, height // 2))
         screen.blit(restart_text, (width // 2 - restart_text.get_width() // 2, height // 2 + 50))
