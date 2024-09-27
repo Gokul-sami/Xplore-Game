@@ -14,16 +14,16 @@ screen = pygame.display.set_mode((800, 600))  # Windowed mode
 pygame.display.set_caption("Dragon Game")
 width, height = screen.get_size()  # Get current window size
 
-<<<<<<< HEAD
 # Load images
-dragon_image = pygame.image.load('assets/dragon-removebg.png')  # Your dragon image
+dragon_image = pygame.image.load('assets/dragon-removebg.png').convert_alpha()  # Your dragon image
 egg_images = [
-    pygame.image.load('assets/egg2.png'),
-    pygame.image.load('assets/egg3.png'),
-    pygame.image.load('assets/egg4.png')
+    pygame.image.load('assets/egg2.png').convert_alpha(),
+    pygame.image.load('assets/egg3.png').convert_alpha(),
+    pygame.image.load('assets/egg4.png').convert_alpha()
 ]
-fireball_image = pygame.image.load('assets/fb1.gif')  # Your fireball image
-background_image = pygame.image.load('assets/bg9.jpeg')  # Your background image
+fireball_image = pygame.image.load('assets/fb1.gif').convert_alpha()  # Your fireball image
+# Removed background_image loading
+# background_image = pygame.image.load('assets/background.jpg').convert()  # Your background image
 
 # Scale images
 def scale_image(image, scale_factor):
@@ -32,8 +32,8 @@ def scale_image(image, scale_factor):
     scaled_height = int(img_height * scale_factor)
     return pygame.transform.scale(image, (scaled_width, scaled_height))
 
-# Scale the background image
-scaled_background = pygame.transform.scale(background_image, (width, height))
+# Removed background scaling
+# scaled_background = pygame.transform.scale(background_image, (width, height))
 
 # Scale the dragon image
 dragon_scale_factor = 0.1
@@ -45,35 +45,12 @@ egg_scale_factor = 0.3
 scaled_eggs = [scale_image(img, egg_scale_factor) for img in egg_images]
 
 # Ensure all egg images are the same size
-obstacle_size = (60, 60)  # Standard size for obstacles
+obstacle_size = (50, 50)  # Standard size for obstacles
 scaled_eggs = [pygame.transform.scale(img, obstacle_size) for img in scaled_eggs]
 
 # Scale fireball image
 fireball_scale_factor = 0.3
 scaled_fireball = pygame.transform.scale(fireball_image, obstacle_size)
-=======
-# Load the background image from the assets folder
-background_image = pygame.image.load('assets/background.jpg')  # Your background image
-background_image = pygame.transform.scale(background_image, (width, height))  # Scale the background to fit the window
-
-# Load the dragon image from the assets folder
-dragon_image = pygame.image.load('assets/dragon-removebg.png')  # Your dragon image
-
-# Load the obstacle image from the assets folder
-obstacle_image = pygame.image.load('assets/bird.webp')  # Your obstacle image
-initial_obstacle_size = 5  # Starting size of the obstacle
-final_obstacle_size = 70    # Final size of the obstacle
-
-# Pre-scale the obstacle image to the maximum size to maintain quality
-obstacle_image_scaled = pygame.transform.scale(obstacle_image, (final_obstacle_size, final_obstacle_size))
-
-# Scale the dragon image
-img_width, img_height = dragon_image.get_size()
-scale_factor = 0.4  # Adjust as necessary
-scaled_width = int(width * scale_factor)
-scaled_height = int((img_height / img_width) * scaled_width)
-scaled_dragon_image = pygame.transform.scale(dragon_image, (scaled_width, scaled_height))
->>>>>>> c6c23817b54765d6f6e27f1d88c84715544be56f
 
 # Initialize MediaPipe Hands
 mp_hands = mp.solutions.hands
@@ -96,7 +73,6 @@ COLUMN_WIDTH = width // NUM_COLUMNS
 possible_x_positions = [COLUMN_WIDTH * i + (COLUMN_WIDTH - obstacle_size[0]) // 2 for i in range(NUM_COLUMNS)]
 
 # Function to create a new obstacle
-<<<<<<< HEAD
 def create_obstacle():
     # Get the list of x positions currently occupied by active obstacles
     occupied_x = [obstacle['rect'].x for obstacle in obstacles]
@@ -123,26 +99,14 @@ def create_obstacle():
         obstacle['image'] = random.choice(scaled_eggs)
 
     return obstacle
-=======
-def create_obstacle(lane):
-    x_pos = lane * (width // 3) + (width // 3) // 2 - initial_obstacle_size // 2  # Center the obstacle in the lane
-    y_pos = 100  # Start 100 pixels above the screen
-    return pygame.Rect(x_pos, y_pos, initial_obstacle_size, initial_obstacle_size)  # Rect for collision detection
->>>>>>> c6c23817b54765d6f6e27f1d88c84715544be56f
 
 # Obstacle settings
 obstacles = []  # List to hold obstacles
 obstacle_speed = 5  # Speed at which obstacles move down
-<<<<<<< HEAD
 
 # Initialize obstacles with reduced count
 for _ in range(3):  # Start with 3 obstacles for better gameplay
     obstacles.append(create_obstacle())
-=======
-for _ in range(3):  # Create 3 obstacles initially
-    lane = random.randint(0, 2)  # Random lane (0, 1, or 2)
-    obstacles.append(create_obstacle(lane))
->>>>>>> c6c23817b54765d6f6e27f1d88c84715544be56f
 
 # Define cooldown settings for obstacle spawning
 obstacle_cooldown = 1500  # Time in milliseconds between spawns
@@ -168,16 +132,9 @@ while running:
             if event.key == pygame.K_r:  # Restart the game if 'R' is pressed
                 score = 0
                 obstacles.clear()
-<<<<<<< HEAD
                 for _ in range(3):  # Initialize with 3 obstacles upon restart
                     obstacles.append(create_obstacle())
                 dragon_x = (width - dragon_width) // 2
-=======
-                for _ in range(3):
-                    lane = random.randint(0, 2)
-                    obstacles.append(create_obstacle(lane))
-                dragon_x = (width - scaled_width) // 2
->>>>>>> c6c23817b54765d6f6e27f1d88c84715544be56f
                 game_over = False
                 start_time = time.time()
                 last_obstacle_spawn_time = pygame.time.get_ticks()  # Reset spawn time
@@ -210,8 +167,8 @@ while running:
             break  # Use the first detected hand
 
     if not game_over and remaining_time > 0:
-        # Draw the background image
-        screen.blit(scaled_background, (0, 0))  # Draw background at top-left corner
+        # Fill the screen with white color
+        screen.fill((255, 255, 255))  # White background
 
         # Handle obstacle spawning based on cooldown
         current_ticks = pygame.time.get_ticks()
@@ -232,6 +189,7 @@ while running:
 
             # Adjusted collision rectangle (excluding top 15%)
             collision_offset = int(dragon_height * 0.15)
+
             dragon_rect = pygame.Rect(
                 dragon_x,
                 height - dragon_height - 10 + collision_offset,  # Move down by 15% of height
@@ -294,67 +252,10 @@ while running:
     # Comment out the following lines if you don't want to see the camera feed
     if results.multi_hand_landmarks:
         for hand_landmarks in results.multi_hand_landmarks:
-<<<<<<< HEAD
             for landmark in hand_landmarks.landmark:
                 x = int(landmark.x * frame.shape[1])
                 y = int(landmark.y * frame.shape[0])
                 cv2.circle(frame, (x, y), 5, (0, 255, 0), -1)  # Draw finger joints
-=======
-            wrist_x = int(hand_landmarks.landmark[mp_hands.HandLandmark.WRIST].x * frame.shape[1])
-
-            # Map the wrist position to the window width
-            dragon_x = int((wrist_x / frame.shape[1]) * width - scaled_width // 2)
-            dragon_x = max(0, min(dragon_x, width - scaled_width))  # Keep within window bounds
-
-    if not game_over:
-        # Draw the background image
-        screen.blit(background_image, (0, 0))  # Blit the background image at (0, 0)
-
-        # Update and draw obstacles
-        for obstacle in obstacles:
-            obstacle.y += obstacle_speed  # Move the obstacle down
-
-            # Scale the obstacle as it descends
-            if obstacle.height < final_obstacle_size:  # Scale up to final size
-                obstacle.height += (final_obstacle_size - initial_obstacle_size) / (height / obstacle_speed)  # Scale up
-                obstacle.width = obstacle.height  # Maintain square shape
-
-            # Draw the pre-scaled obstacle image at the current obstacle's size
-            scaled_obstacle_image = pygame.transform.scale(obstacle_image_scaled, (int(obstacle.width), int(obstacle.height)))
-            screen.blit(scaled_obstacle_image, (obstacle.x, obstacle.y))  # Draw the obstacle image
-
-            # Check for collision with the dragon
-            if obstacle.colliderect(pygame.Rect(dragon_x, height - scaled_height, scaled_width, scaled_height)):
-                game_over = True  # Set game over when collision occurs
-
-            # If the obstacle goes off the screen, reset its position
-            if obstacle.y > height:
-                obstacles.remove(obstacle)
-                lane = random.randint(0, 2)  # Random lane for new obstacle
-                obstacles.append(create_obstacle(lane))  # Create a new obstacle
-                score += 1  # Increment score for each obstacle successfully avoided
-
-        # Draw the scaled dragon image at the calculated position
-        screen.blit(scaled_dragon_image, (dragon_x, height - scaled_height))
-
-        # Draw the score
-        font = pygame.font.SysFont(None, 36)
-        score_text = font.render(f'Score: {score}', True, (0, 0, 0))
-        screen.blit(score_text, (10, 10))  # Position of the score in the top left corner
-
-    else:
-        # Game Over screen
-        font = pygame.font.SysFont(None, 72)
-        game_over_text = font.render('Game Over!', True, (255, 0, 0))
-        restart_text = font.render('Press R to Restart', True, (0, 0, 0))
-        screen.blit(game_over_text, (width // 2 - 150, height // 2 - 50))
-        screen.blit(restart_text, (width // 2 - 170, height // 2))
-
-    # Update the display
-    pygame.display.flip()
-
-    # Show the camera feed with the drawn landmarks (optional)
->>>>>>> c6c23817b54765d6f6e27f1d88c84715544be56f
     cv2.imshow('Camera Feed', frame)
 
     # Exit if 'q' is pressed
