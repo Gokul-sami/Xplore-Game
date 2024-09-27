@@ -190,15 +190,18 @@ while running:
             else:
                 screen.blit(scaled_fireball, (obstacle['rect'].x, obstacle['rect'].y))
 
-            # Adjusted collision rectangle (excluding top 4%)
-            collision_offset_percentage = 0.04  # 4%
-            collision_offset = int(dragon_height * collision_offset_percentage)
+            # Adjusted collision rectangle (excluding top 4% and sides 2%)
+            collision_offset_top_percentage = 0.04  # 4%
+            collision_offset_side_percentage = 0.02  # 2%
+
+            collision_offset_top = int(dragon_height * collision_offset_top_percentage)
+            collision_offset_side = int(dragon_width * collision_offset_side_percentage)
 
             dragon_rect = pygame.Rect(
-                dragon_x,
-                height - dragon_height - 10 + collision_offset,  # Move down by 4% of height
-                dragon_width,
-                dragon_height - collision_offset  # Reduce height by 4%
+                dragon_x + collision_offset_side,  # Shift right by 2% of width
+                height - dragon_height - 10 + collision_offset_top,  # Shift down by 4% of height
+                dragon_width - 2 * collision_offset_side,  # Reduce width by 4% (2% each side)
+                dragon_height - collision_offset_top  # Reduce height by 4%
             )
 
             # Check for collision with the dragon
