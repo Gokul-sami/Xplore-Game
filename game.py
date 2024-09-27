@@ -22,7 +22,7 @@ egg_images = [
     pygame.image.load('assets/egg4.png').convert_alpha()
 ]
 fireball_image = pygame.image.load('assets/fb1.gif').convert_alpha()  # Your fireball image
-# Removed background_image loading
+# Removed background_image loading since we're keeping a white background
 # background_image = pygame.image.load('assets/background.jpg').convert()  # Your background image
 
 # Scale images
@@ -32,7 +32,7 @@ def scale_image(image, scale_factor):
     scaled_height = int(img_height * scale_factor)
     return pygame.transform.scale(image, (scaled_width, scaled_height))
 
-# Removed background scaling
+# Removed background scaling since we're using a white background
 # scaled_background = pygame.transform.scale(background_image, (width, height))
 
 # Scale the dragon image
@@ -109,8 +109,8 @@ for _ in range(3):  # Start with 3 obstacles for better gameplay
     obstacles.append(create_obstacle())
 
 # Define cooldown settings for obstacle spawning
-obstacle_cooldown = 1500  # Time in milliseconds between spawns
-last_obstacle_spawn_time = pygame.time.get_ticks()
+obstacle_cooldown = 1500  # Time in milliseconds between spawns (1.5 seconds)
+last_obstacle_spawn_time = pygame.time.get_ticks()  # Initialize spawn time
 
 # Initialize game variables
 running = True
@@ -118,6 +118,9 @@ game_over = False
 score = 0
 start_time = time.time()
 game_duration = 120  # 2 minutes in seconds
+
+# Initialize Clock for controlling frame rate
+clock = pygame.time.Clock()
 
 # Main loop
 while running:
@@ -187,14 +190,15 @@ while running:
             else:
                 screen.blit(scaled_fireball, (obstacle['rect'].x, obstacle['rect'].y))
 
-            # Adjusted collision rectangle (excluding top 15%)
-            collision_offset = int(dragon_height * 0.15)
+            # Adjusted collision rectangle (excluding top 4%)
+            collision_offset_percentage = 0.04  # 4%
+            collision_offset = int(dragon_height * collision_offset_percentage)
 
             dragon_rect = pygame.Rect(
                 dragon_x,
-                height - dragon_height - 10 + collision_offset,  # Move down by 15% of height
+                height - dragon_height - 10 + collision_offset,  # Move down by 4% of height
                 dragon_width,
-                dragon_height - collision_offset  # Reduce height by 15%
+                dragon_height - collision_offset  # Reduce height by 4%
             )
 
             # Check for collision with the dragon
@@ -247,6 +251,9 @@ while running:
 
     # Update the display
     pygame.display.flip()
+
+    # Control frame rate
+    clock.tick(30)  # Limit to 30 frames per second
 
     # Show the camera feed with the drawn landmarks (optional)
     # Comment out the following lines if you don't want to see the camera feed
