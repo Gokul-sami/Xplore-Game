@@ -14,20 +14,22 @@ width, height = screen.get_size()  # Get current window size
 
 # Load the background image from the assets folder
 background_image = pygame.image.load('assets/background.jpg')  # Your background image
-21
-# Scale the background to fit the window
-background_image = pygame.transform.scale(background_image, (width, height))
+background_image = pygame.transform.scale(background_image, (width, height))  # Scale the background to fit the window
 
 # Load the dragon image from the assets folder
 dragon_image = pygame.image.load('assets/dragon-removebg.png')  # Your dragon image
 
 # Load the obstacle image from the assets folder
 obstacle_image = pygame.image.load('assets/bird.webp')  # Your obstacle image
-obstacle_image = pygame.transform.scale(obstacle_image, (60, 60))  # Scale to desired size
+initial_obstacle_size = 5  # Starting size of the obstacle
+final_obstacle_size = 70    # Final size of the obstacle
+
+# Pre-scale the obstacle image to the maximum size to maintain quality
+obstacle_image_scaled = pygame.transform.scale(obstacle_image, (final_obstacle_size, final_obstacle_size))
 
 # Scale the dragon image
 img_width, img_height = dragon_image.get_size()
-scale_factor = 0.3  # Adjust as necessary
+scale_factor = 0.4  # Adjust as necessary
 scaled_width = int(width * scale_factor)
 scaled_height = int((img_height / img_width) * scaled_width)
 scaled_dragon_image = pygame.transform.scale(dragon_image, (scaled_width, scaled_height))
@@ -40,16 +42,17 @@ hands = mp_hands.Hands(static_image_mode=False, max_num_hands=2, min_detection_c
 cap = cv2.VideoCapture(0)
 
 # Function to create a new obstacle
-def create_obstacle():
-    x_pos = random.choice([0, width // 3, 2 * width // 3])
-    y_pos = 0  # Start at the top
-    return pygame.Rect(x_pos, y_pos, 50, 50)  # Rect for collision detection
+def create_obstacle(lane):
+    x_pos = lane * (width // 3) + (width // 3) // 2 - initial_obstacle_size // 2  # Center the obstacle in the lane
+    y_pos = 100  # Start 100 pixels above the screen
+    return pygame.Rect(x_pos, y_pos, initial_obstacle_size, initial_obstacle_size)  # Rect for collision detection
 
 # Obstacle settings
 obstacles = []  # List to hold obstacles
 obstacle_speed = 5  # Speed at which obstacles move down
 for _ in range(3):  # Create 3 obstacles initially
-    obstacles.append(create_obstacle())
+    lane = random.randint(0, 2)  # Random lane (0, 1, or 2)
+    obstacles.append(create_obstacle(lane))
 
 # Initialize game variables
 running = True
@@ -67,7 +70,8 @@ while running:
                 score = 0
                 obstacles.clear()
                 for _ in range(3):
-                    obstacles.append(create_obstacle())
+                    lane = random.randint(0, 2)
+                    obstacles.append(create_obstacle(lane))
                 dragon_x = (width - scaled_width) // 2
                 game_over = False
 
@@ -102,7 +106,15 @@ while running:
         # Update and draw obstacles
         for obstacle in obstacles:
             obstacle.y += obstacle_speed  # Move the obstacle down
-            screen.blit(obstacle_image, (obstacle.x, obstacle.y))  # Draw the obstacle image
+
+            # Scale the obstacle as it descends
+            if obstacle.height < final_obstacle_size:  # Scale up to final size
+                obstacle.height += (final_obstacle_size - initial_obstacle_size) / (height / obstacle_speed)  # Scale up
+                obstacle.width = obstacle.height  # Maintain square shape
+
+            # Draw the pre-scaled obstacle image at the current obstacle's size
+            scaled_obstacle_image = pygame.transform.scale(obstacle_image_scaled, (int(obstacle.width), int(obstacle.height)))
+            screen.blit(scaled_obstacle_image, (obstacle.x, obstacle.y))  # Draw the obstacle image
 
             # Check for collision with the dragon
             if obstacle.colliderect(pygame.Rect(dragon_x, height - scaled_height, scaled_width, scaled_height)):
@@ -111,7 +123,8 @@ while running:
             # If the obstacle goes off the screen, reset its position
             if obstacle.y > height:
                 obstacles.remove(obstacle)
-                obstacles.append(create_obstacle())  # Create a new obstacle
+                lane = random.randint(0, 2)  # Random lane for new obstacle
+                obstacles.append(create_obstacle(lane))  # Create a new obstacle
                 score += 1  # Increment score for each obstacle successfully avoided
 
         # Draw the scaled dragon image at the calculated position

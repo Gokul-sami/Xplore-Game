@@ -12,19 +12,25 @@ pygame.init()
 screen = pygame.display.set_mode((800, 600))  # Windowed mode
 width, height = screen.get_size()  # Get current window size
 
+# Load the background image from the assets folder
+background_image = pygame.image.load('assets/background.jpg')  # Your background image
+21
+# Scale the background to fit the window
+background_image = pygame.transform.scale(background_image, (width, height))
+
 # Load the dragon image from the assets folder
-background_image = pygame.image.load('assets/dragon-removebg.png')  # Your dragon image
+dragon_image = pygame.image.load('assets/dragon-removebg.png')  # Your dragon image
 
 # Load the obstacle image from the assets folder
 obstacle_image = pygame.image.load('assets/bird.webp')  # Your obstacle image
 obstacle_image = pygame.transform.scale(obstacle_image, (60, 60))  # Scale to desired size
 
 # Scale the dragon image
-img_width, img_height = background_image.get_size()
-scale_factor = 0.2  # Adjust as necessary
+img_width, img_height = dragon_image.get_size()
+scale_factor = 0.3  # Adjust as necessary
 scaled_width = int(width * scale_factor)
 scaled_height = int((img_height / img_width) * scaled_width)
-scaled_image = pygame.transform.scale(background_image, (scaled_width, scaled_height))
+scaled_dragon_image = pygame.transform.scale(dragon_image, (scaled_width, scaled_height))
 
 # Initialize MediaPipe Hands
 mp_hands = mp.solutions.hands
@@ -36,7 +42,8 @@ cap = cv2.VideoCapture(0)
 # Function to create a new obstacle
 def create_obstacle():
     x_pos = random.choice([0, width // 3, 2 * width // 3])
-    return pygame.Rect(x_pos, 0, 50, 50)  # Keep the Rect the same size as the image for collision detection
+    y_pos = 0  # Start at the top
+    return pygame.Rect(x_pos, y_pos, 50, 50)  # Rect for collision detection
 
 # Obstacle settings
 obstacles = []  # List to hold obstacles
@@ -82,21 +89,15 @@ while running:
     # Draw hand landmarks
     if results.multi_hand_landmarks:
         for hand_landmarks in results.multi_hand_landmarks:
-            for landmark in hand_landmarks.landmark:
-                x = int(landmark.x * frame.shape[1])
-                y = int(landmark.y * frame.shape[0])
-                cv2.circle(frame, (x, y), 5, (0, 255, 0), -1)  # Draw finger joints
-
             wrist_x = int(hand_landmarks.landmark[mp_hands.HandLandmark.WRIST].x * frame.shape[1])
-            wrist_y = int(hand_landmarks.landmark[mp_hands.HandLandmark.WRIST].y * frame.shape[0])
 
             # Map the wrist position to the window width
             dragon_x = int((wrist_x / frame.shape[1]) * width - scaled_width // 2)
             dragon_x = max(0, min(dragon_x, width - scaled_width))  # Keep within window bounds
 
     if not game_over:
-        # Clear the screen
-        screen.fill((255, 255, 255))
+        # Draw the background image
+        screen.blit(background_image, (0, 0))  # Blit the background image at (0, 0)
 
         # Update and draw obstacles
         for obstacle in obstacles:
@@ -114,7 +115,7 @@ while running:
                 score += 1  # Increment score for each obstacle successfully avoided
 
         # Draw the scaled dragon image at the calculated position
-        screen.blit(scaled_image, (dragon_x, height - scaled_height))
+        screen.blit(scaled_dragon_image, (dragon_x, height - scaled_height))
 
         # Draw the score
         font = pygame.font.SysFont(None, 36)
